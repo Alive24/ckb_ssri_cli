@@ -1,3 +1,7 @@
 {
-  "extends": ["oclif", "oclif-typescript", "prettier"]
+  "extends": ["oclif", "oclif-typescript", "prettier"],
+  "rules": {
+    "sort-keys": 0,
+    "new-cap": 0,
+  }
 }
