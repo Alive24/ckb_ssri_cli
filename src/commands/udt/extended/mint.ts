@@ -1,11 +1,10 @@
-import { ccc, Cell, CellDepLike } from '@ckb-ccc/core'
+import { ccc, Cell, CellDep, CellDepLike } from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import { getUDTConfig } from '../../libs/config.js'
+import { getUDTConfig } from '../../../libs/config.js'
+import 'dotenv/config'
 
-export default class UdtTransfer extends Command {
+export default class UdtExtendedMint extends Command {
   static override args = {
-    toAddress: Args.string({description: 'file to read'}),
-    toAmount: Args.string({description: 'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000'}),
   }
 
   static override description = 'describe the command here'
@@ -16,21 +15,26 @@ export default class UdtTransfer extends Command {
 
   static override flags = {
     // flag with no value (-f, --force)
-    transactionJson: Flags.file({}),
+    force: Flags.boolean({char: 'f'}),
     // flag with a value (-n, --name=VALUE)
+    name: Flags.string({char: 'n', description: 'name to print'}),
   }
-  // TODO: Get signer
+
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UdtTransfer);
+    const {args, flags} = await this.parse(UdtExtendedMint)
 
     const client = new ccc.ClientPublicTestnet({ url: process.env.CKB_RPC_URL });
     const signer = new ccc.SignerCkbPrivateKey(
       client,
-      process.env.PAUSED_WALLET_PRIVATE_KEY!,
+      process.env.MAIN_WALLET_PRIVATE_KEY!,
     );
-    const toAddress = "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqtxe0gs9yvwrsc40znvdc6sg4fehd2mttsngg4t4";
+
+    const recommendedActorAddress = await signer.getRecommendedAddress();
+    const { script: ownerLock } = await signer.getRecommendedAddressObj();
+
+    const toAddress = "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp";
     const toLock = (await ccc.Address.fromString(toAddress, signer.client)).script;
-    
+
     const udtConfig = getUDTConfig();
     const udtTypeScript = new ccc.Script(
       udtConfig.code_hash,
@@ -38,7 +42,7 @@ export default class UdtTransfer extends Command {
       udtConfig.args
     );
 
-    const transferTx = ccc.Transaction.from({
+    const mintTx = ccc.Transaction.from({
       outputs: [
         {
           lock: toLock,
@@ -46,12 +50,14 @@ export default class UdtTransfer extends Command {
         },
       ],
       outputsData: [
-        ccc.numLeToBytes(50000000, 16)
+        ccc.numLeToBytes(100000000, 16)
       ]
     });
-    await transferTx.completeInputsByUdt(signer, udtTypeScript);
-    await transferTx.completeInputsByCapacity(signer);
-    await transferTx.completeFeeBy(signer);
+
+    await mintTx.completeInputsByCapacity(signer);
+    await mintTx.completeFeeBy(signer);
+
+    console.log(mintTx.inputs[0]);
 
     const findCellDepResult = await client.findCells(udtConfig.cellDepSearchKey).next();
     const cellDepCell: Cell = findCellDepResult.value;
@@ -63,14 +69,9 @@ export default class UdtTransfer extends Command {
       depType: 'code',
     };
 
-    transferTx.addCellDeps(cellDepLike);
-    const transferTxTxHash = await signer.sendTransaction(transferTx);
+    mintTx.addCellDeps(cellDepLike);
+    const mintTxHash = await signer.sendTransaction(mintTx);
 
-    console.log(`Minted UDT with transaction hash: ${transferTxTxHash}`);
-
+    console.log(`Minted UDT with transaction hash: ${mintTxHash}`);
   }
-
-  // TODO: Traditional transferring for pausable-udt
-
-  // TODO: SSRI transferring for pausable-udt
 }

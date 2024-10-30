@@ -1,4 +1,5 @@
 import {Args, Command, Flags} from '@oclif/core'
+import { encodeU832Array } from '../../libs/utils'
 
 export default class Hello extends Command {
   static args = {

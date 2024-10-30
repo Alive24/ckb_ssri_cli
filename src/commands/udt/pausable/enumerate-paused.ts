@@ -6,7 +6,6 @@ import axios from 'axios'
 
 export default class UdtPausableIsPaused extends Command {
   static override args = {
-    lock_hash: Args.string({description: 'Lock hash in hex. Variable length'}),
   }
 
   static strict = false;
@@ -28,19 +27,10 @@ export default class UdtPausableIsPaused extends Command {
 
   public async run(): Promise<void> {
     const {argv, flags} = await this.parse(UdtPausableIsPaused)
-    let lockHashU832Array = [];
-    for (const lock_hash of argv) {
-      lockHashU832Array.push(numToBytes(String(lock_hash), 32).reverse());
-    }
-    console.debug('lockHashU832Array:', lockHashU832Array);
-    const lockHashU832ArrayEncoded = encodeU832Array(lockHashU832Array);
-    console.debug('lockHashArrayEncoded:', lockHashU832ArrayEncoded);
-    const lockHashU832ArrayEncodedHex = encodeHex(lockHashU832ArrayEncoded);
-
     // Method path hex function
     const hasher = new HasherCkb();
-    const isPausedPathHex = hasher.update(Buffer.from('UDT.is_paused')).digest().slice(0, 18);
-    console.debug('hashed method path hex:', isPausedPathHex);
+    const enumeratePausedPathHex = hasher.update(Buffer.from('UDT.enumerate_paused')).digest().slice(0, 18);
+    console.debug('hashed method path hex:', enumeratePausedPathHex);
 
     // Define URL
     const url = 'http://localhost:9090';
@@ -55,7 +45,7 @@ export default class UdtPausableIsPaused extends Command {
         // args.target, 
         0,
         // args.index, 
-        [isPausedPathHex, `0x${lockHashU832ArrayEncodedHex}`]],
+        [enumeratePausedPathHex,]],
     };
 
     // Send POST request
