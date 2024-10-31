@@ -1,14 +1,17 @@
-import {HasherCkb, numToBytes, numToHex} from '@ckb-ccc/core'
+import {ccc, Cell, CellDepLike, HasherCkb, numToBytes, numToHex} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
 import {cccA} from '@ckb-ccc/core/advanced'
-import { encodeHex, encodeU832Array } from '../../../libs/utils.js'
+import {encodeHex, encodeU832Array} from '../../../libs/utils.js'
 import axios from 'axios'
+import {getCellDepsFromSearchKeys, getUDTConfig} from '../../../libs/config.js'
+import {debug} from 'debug'
 
 export default class UdtPausableIsPaused extends Command {
   static override args = {
+    symbol: Args.string({description: 'Symbol of UDT to mint.', required: true}),
   }
 
-  static strict = false;
+  static strict = false
 
   static override description = 'describe the command here'
 
@@ -25,39 +28,38 @@ export default class UdtPausableIsPaused extends Command {
     }),
   }
 
+  // TODO: This would only work for code only pause list at the moment. Will need to raise to transaction level for external metadata/pause data cell.
   public async run(): Promise<void> {
-    const {argv, flags} = await this.parse(UdtPausableIsPaused)
+    const {args, flags} = await this.parse(UdtPausableIsPaused)
     // Method path hex function
-    const hasher = new HasherCkb();
-    const enumeratePausedPathHex = hasher.update(Buffer.from('UDT.enumerate_paused')).digest().slice(0, 18);
-    console.debug('hashed method path hex:', enumeratePausedPathHex);
+    const hasher = new HasherCkb()
+    const enumeratePausedPathHex = hasher.update(Buffer.from('UDT.enumerate_paused')).digest().slice(0, 18)
+    debug(`enumerate-paused | hashed method path hex: ${enumeratePausedPathHex}`)
 
-    // Define URL
-    const url = 'http://localhost:9090';
+    const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
+    const udtConfig = getUDTConfig(args.symbol)
+
+    const codeCellDep = (await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))[0];
 
     // Define the JSON payload
     const payload = {
       id: 2,
       jsonrpc: '2.0',
       method: 'run_script_level_code',
-      params: [
-        "0x24e477bdae84955713ce9075cc176e87f1c882fa3cedcde4ea3dd6c1ee7b0d5c",
-        // args.target, 
-        0,
-        // args.index, 
-        [enumeratePausedPathHex,]],
-    };
+      params: [codeCellDep.outPoint.txHash, Number(codeCellDep.outPoint.index), [enumeratePausedPathHex]],
+    }
 
     // Send POST request
     axios
-      .post(url, payload, {
+      .post(process.env.SSRI_SERVER_URL!, payload, {
         headers: {'Content-Type': 'application/json'},
       })
       .then((response) => {
-        console.log('Response JSON:', response.data)
+        this.log('Response JSON:', response.data)
       })
       .catch((error) => {
         console.error('Request failed', error)
       })
+    // TODO: Prettify response.
   }
 }

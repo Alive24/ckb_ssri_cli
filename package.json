@@ -12,8 +12,13 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
+    "@types/debug": "^4.1.12",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jsonfile": "^6.1.4",
     "axios": "^1.7.7",
-    "dotenv": "^16.4.5"
+    "debug": "^4.3.7",
+    "dotenv": "^16.4.5",
+    "fs-extra": "^11.2.0"
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",

@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import { encodeU832Array } from '../../libs/utils'
 
-export default class Hello extends Command {
+export default class Config extends Command {
   static args = {
     person: Args.string({description: 'Person to say hello to', required: true}),
   }
@@ -19,7 +19,7 @@ hello friend from oclif! (./src/commands/hello/index.ts)
   }
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(Hello)
+    const {args, flags} = await this.parse(Config)
 
     this.log(`hello ${args.person} from ${flags.from}! (./src/commands/hello/index.ts)`)
   }
