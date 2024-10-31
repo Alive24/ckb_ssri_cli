@@ -7,14 +7,14 @@ export default class ConfigAccountImport extends Command {
     alias: Args.string({description: 'Account Alias; if not provided, will use the address as alias'}),
   }
 
-  static override description = 'describe the command here'
+  static override description = 'Import an account to the CLI config.'
 
   static override examples = [
-    '<%= config.bin %> <%= command.id %>',
+    'ckb-ssri-cli config:account:import --private-key <privateKey> [alias]',
   ]
 
   static override flags = {
-    // TODO: Private key is the only approach at the moment.
+    // TODO: Private key is the only approach at the moment. Support more in the future.
     // TODO: Make this approach more secure. Maybe chain it to ckb-cli like ckb-cinnabar.
     privateKey: Flags.string({char: 'p', description: 'Private Key', required: true}),
   }

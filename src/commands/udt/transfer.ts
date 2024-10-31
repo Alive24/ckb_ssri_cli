@@ -13,12 +13,26 @@ export default class UdtTransfer extends Command {
     }),
   }
 
-  static override description = 'describe the command here'
+  static override description = 'Transfer UDT to an address.'
 
-  static override examples = ['<%= config.bin %> <%= command.id %>']
+  static override examples = [
+    'ckb-ssri-cli udt:transfer PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
+  ]
 
   static override flags = {
-    transactionJson: Flags.file({}),
+    privateKey: Flags.string({
+      description: 'Use specific private key to sign. Will use MAIN_WALLET_PRIVATE_KEY from .env by default.',
+    }),
+    fromAccount: Flags.string({
+      description: 'Use specific account to sign. Will use MAIN_WALLET_PRIVATE_KEY from .env by default.',
+    }),
+    // TODO: Implement fromTransactionJson and holdSend.
+    fromTransactionJson: Flags.file({
+      description: 'Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
+    }),
+    holdSend: Flags.boolean({
+      description: 'Hold the transaction and send it later. Will output the transaction JSON. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+    }),
   }
 
   public async run(): Promise<void> {
