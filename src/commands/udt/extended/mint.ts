@@ -1,6 +1,6 @@
 import {ccc, Cell, CellDep, CellDepLike} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import {getCellDepsFromSearchKeys, getCLIConfig } from '../../../libs/config.js'
+import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
 import 'dotenv/config'
 
 export default class UDTExtendedMint extends Command {
@@ -13,10 +13,11 @@ export default class UDTExtendedMint extends Command {
     }),
   }
 
-  static override description = 'Mint UDT to an address. Make sure you have the mint permission to the token.'
+  static override description =
+    'Mint UDT to an address. Make sure you have the mint permission to the token. It overrides pause list.'
 
   static override examples = [
-    'ckb-ssri-cli udt:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
+    'ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
   ]
 
   static override flags = {
@@ -55,6 +56,7 @@ export default class UDTExtendedMint extends Command {
       ],
       outputsData: [ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)],
     })
+
 
     await mintTx.completeInputsByCapacity(signer)
     await mintTx.completeFeeBy(signer)

@@ -76,6 +76,7 @@ export default class UDTPausableEnumeratePaused extends Command {
           pauseList.push(pauseListHex.slice(i, i + 64))
         }
         this.log(`Pause List: \n${pauseList}`)
+        return
       })
       .catch((error) => {
         console.error('Request failed', error)

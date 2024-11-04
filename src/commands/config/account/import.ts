@@ -10,7 +10,7 @@ export default class ConfigAccountImport extends Command {
   static override description = 'Import an account to the CLI config.'
 
   static override examples = [
-    'ckb-ssri-cli config:account:import --private-key <privateKey> [alias]',
+    'ckb_ssri_cli config:account:import --private-key <privateKey> [alias]',
   ]
 
   static override flags = {

@@ -1,5 +1,6 @@
 import {ClientCollectableSearchKeyLike} from '@ckb-ccc/core/advancedBarrel'
 import {UDTConfig, AccountConfig} from './config.js'
+import 'dotenv/config'
 
 // TODO: This should be an enum of network but ts-config seems not allowing it
 export const DefaultRPCRegistry: Record<string, string> = {
@@ -53,10 +54,13 @@ export const DefaultUDTRegistry: Record<string, UDTConfig> = {
 }
 
 export const DefaultAccountRegistry: Record<string, AccountConfig> = {
-  Main: {
+  "Main": {
     privateKey: process.env.MAIN_WALLET_PRIVATE_KEY!,
   },
-  Paused: {
+  "Paused": {
     privateKey: process.env.PAUSED_WALLET_PRIVATE_KEY!,
   },
+  "TestNormal": {
+    privateKey: "d6291986b247f93be1843a091ddaf889c13283fdd07b073e05176566896a74cb",
+  }
 }

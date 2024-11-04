@@ -16,7 +16,7 @@ export default class UDTTransfer extends Command {
   static override description = 'Transfer UDT to an address.'
 
   static override examples = [
-    'ckb-ssri-cli udt:transfer PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
+    'ckb_ssri_cli udt:transfer PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
   ]
 
   static override flags = {
@@ -25,6 +25,7 @@ export default class UDTTransfer extends Command {
     }),
     fromAccount: Flags.string({
       description: 'Use specific account to sign. Will use MAIN_WALLET_PRIVATE_KEY from .env by default.',
+      char: 'f',
     }),
     // TODO: Implement fromTransactionJson and holdSend.
     fromTransactionJson: Flags.file({
@@ -40,11 +41,19 @@ export default class UDTTransfer extends Command {
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UDTTransfer)
 
+    const cliConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
-    const signer = new ccc.SignerCkbPrivateKey(client, process.env.MAIN_WALLET_PRIVATE_KEY!)
+
+    const signer = new ccc.SignerCkbPrivateKey(
+      client,
+      flags.privateKey ??
+        cliConfig.accountRegistry[flags.fromAccount ?? '']?.privateKey ??
+        process.env.MAIN_WALLET_PRIVATE_KEY!,
+    )
+
+    const {script: changeLock} = await signer.getRecommendedAddressObj()
     const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
 
-    const cliConfig = await getCLIConfig(this.config.configDir)
     const udtConfig = cliConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
 
@@ -58,6 +67,18 @@ export default class UDTTransfer extends Command {
       outputsData: [ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)],
     })
     await transferTx.completeInputsByUdt(signer, udtTypeScript)
+    const balanceDiff =
+      (await transferTx.getInputsUdtBalance(signer.client, udtTypeScript)) -
+      transferTx.getOutputsUdtBalance(udtTypeScript)
+    if (balanceDiff > ccc.Zero) {
+      transferTx.addOutput(
+        {
+          lock: changeLock,
+          type: udtTypeScript,
+        },
+        ccc.numLeToBytes(balanceDiff, 16),
+      )
+    }
     await transferTx.completeInputsByCapacity(signer)
     await transferTx.completeFeeBy(signer)
 

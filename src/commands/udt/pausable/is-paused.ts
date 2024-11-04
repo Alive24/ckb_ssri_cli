@@ -14,9 +14,9 @@ export default class UDTPausableIsPaused extends Command {
 
   static strict = false
 
-  static override description = 'describe the command here'
+  static override description = 'Inspect an array of specific lock hashes to see if any one of they are paused. Note that this command is transaction specific if using external pause list.'
 
-  static override examples = ['<%= config.bin %> <%= command.id %>']
+  static override examples = ['ckb_ssri_sli udt:pausable:is-paused PUDT 0xd19228c64920eb8c3d79557d8ae59ee7a14b9d7de45ccf8bafacf82c91fc359e']
 
   static override flags = {
     target: Flags.string({description: 'Target cell'}),
@@ -70,6 +70,7 @@ export default class UDTPausableIsPaused extends Command {
       })
       .then((response) => {
         this.log('Response JSON:', response.data)
+        return
       })
       .catch((error) => {
         console.error('Request failed', error)
