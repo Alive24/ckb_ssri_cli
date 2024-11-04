@@ -31,6 +31,8 @@ export default class ConfigAccountImport extends Command {
       privateKey: flags.privateKey,
     }
 
+    this.log(`Account imported with alias: ${accountRegistryKey}. The address is ${signer.getRecommendedAddress()}.`);
+
     await updateCLIConfig(this.config.configDir, cliConfig);
   }
 }

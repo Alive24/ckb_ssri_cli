@@ -3,19 +3,20 @@ import {Args, Command, Flags} from '@oclif/core'
 import {cccA} from '@ckb-ccc/core/advanced'
 import {encodeHex, encodeU832Array} from '../../../libs/utils.js'
 import axios from 'axios'
-import {getCellDepsFromSearchKeys, getUDTConfig} from '../../../libs/config.js'
-import {debug} from 'debug'
+import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
+import debug from 'debug'
 
-export default class UdtPausableIsPaused extends Command {
+export default class UDTPausableEnumeratePaused extends Command {
   static override args = {
     symbol: Args.string({description: 'Symbol of UDT to mint.', required: true}),
   }
 
   static strict = false
 
-  static override description = 'describe the command here'
+  static override description =
+    'Enumerate the pause list of the token. Note: This command should be transaction level if using external pause list.'
 
-  static override examples = ['<%= config.bin %> <%= command.id %>']
+  static override examples = ['ckb_ssri_sli udt:pausable:enumerate-paused PUDT']
 
   static override flags = {
     target: Flags.string({description: 'Target cell'}),
@@ -30,16 +31,17 @@ export default class UdtPausableIsPaused extends Command {
 
   // TODO: This would only work for code only pause list at the moment. Will need to raise to transaction level for external metadata/pause data cell.
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UdtPausableIsPaused)
+    const {args, flags} = await this.parse(UDTPausableEnumeratePaused)
     // Method path hex function
     const hasher = new HasherCkb()
     const enumeratePausedPathHex = hasher.update(Buffer.from('UDT.enumerate_paused')).digest().slice(0, 18)
     debug(`enumerate-paused | hashed method path hex: ${enumeratePausedPathHex}`)
 
+    const cliConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
-    const udtConfig = getUDTConfig(args.symbol)
+    const udtConfig = cliConfig.UDTRegistry[args.symbol]
 
-    const codeCellDep = (await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))[0];
+    const codeCellDep = (await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))[0]
 
     // Define the JSON payload
     const payload = {
@@ -55,7 +57,25 @@ export default class UdtPausableIsPaused extends Command {
         headers: {'Content-Type': 'application/json'},
       })
       .then((response) => {
-        this.log('Response JSON:', response.data)
+        this.debug('Response JSON:', response.data)
+        const lengthBytes = new Uint8Array(4)
+        for (let i = 0; i < 8; i += 2) {
+          lengthBytes[i / 2] = parseInt(
+            response.data.result
+              .toString()
+              .slice(2)
+              .slice(i, i + 2),
+            16,
+          )
+        }
+        const pauseListLength = new cccA.moleculeCodecCkb.Uint32(lengthBytes)
+        this.log(`Pause List Length: ${pauseListLength.toLittleEndianUint32()}`)
+        const pauseListHex = response.data.result.toString().slice(10)
+        let pauseList = []
+        for (let i = 0; i < pauseListHex.length; i += 64) {
+          pauseList.push(pauseListHex.slice(i, i + 64))
+        }
+        this.log(`Pause List: \n${pauseList}`)
       })
       .catch((error) => {
         console.error('Request failed', error)

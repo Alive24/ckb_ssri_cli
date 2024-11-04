@@ -19,6 +19,26 @@ export function encodeU832Array(val: Array<Uint8Array>): Uint8Array {
   return new Uint8Array([...lengthBytes, ...flattenedBytes])
 }
 
+export function decodeU832Array(data: Uint8Array): Array<Uint8Array> {
+  if (data.length < 4) {
+    throw new Error('Input data is too short to contain a length.')
+  }
+
+  // Extract the length as a little-endian 4-byte integer
+  const length = new Uint32Array(data.slice(0, 4).buffer)[0]
+  debug(`decodeU832Array | length: ${length}`);
+
+  // Extract the 32-byte elements from the remaining data
+  const result = []
+  for (let i = 0; i < length; i++) {
+    const start = 4 + i * 32
+    const end = 4 + (i + 1) * 32
+    result.push(data.slice(start, end))
+  }
+
+  return result
+}
+
 export function encodeHex(data: Uint8Array): string {
   // Convert each byte to a two-character hex string
   return Array.from(data, byte => byte.toString(16).padStart(2, '0')).join('');

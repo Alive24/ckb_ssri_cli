@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import { getCLIConfig, UDTConfig, updateCLIConfig } from '../../../libs/config.js'
 
-export default class ConfigUdtRegister extends Command {
+export default class ConfigUDTRegister extends Command {
   static override args = {
     jsonString: Args.string({description: 'JsonString', required: true}),
   }
@@ -16,21 +16,25 @@ export default class ConfigUdtRegister extends Command {
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(ConfigUdtRegister)
+    const {args, flags} = await this.parse(ConfigUDTRegister)
 
     // Read JSON string as UDTConfig
-    const rawUdtConfig = JSON.parse(args.jsonString)
+    const rawUDTConfig = JSON.parse(args.jsonString)
 
-    const parsedUdtConfig: UDTConfig = {
-      symbol: rawUdtConfig.symbol,
-      code_hash: rawUdtConfig.code_hash,
-      args: rawUdtConfig.args,
-      cellDepSearchKeys: rawUdtConfig.cellDepSearchKeys,
-      decimals: rawUdtConfig.decimals,
+    const parsedUDTConfig: UDTConfig = {
+      network: rawUDTConfig.network,
+      symbol: rawUDTConfig.symbol,
+      code_hash: rawUDTConfig.code_hash,
+      args: rawUDTConfig.args,
+      cellDepSearchKeys: rawUDTConfig.cellDepSearchKeys,
+      decimals: rawUDTConfig.decimals,
     }
 
     let cliConfig = await getCLIConfig(this.config.configDir);
-    cliConfig.UDTRegistry[parsedUdtConfig.symbol] = parsedUdtConfig
+    cliConfig.UDTRegistry[parsedUDTConfig.symbol] = parsedUDTConfig
+
+    this.log(`UDT registered with symbol: ${parsedUDTConfig.symbol}.`);
+    this.log(`UDT Config: ${JSON.stringify(parsedUDTConfig)}`);
     await updateCLIConfig(this.config.configDir, cliConfig);
   }
 }

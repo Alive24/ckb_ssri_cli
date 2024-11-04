@@ -2,27 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "npm exec ckb_ssri_cli udt:pausable:is-paused 0xa9c1b6b195ce5b7a3f0bbc07d16e00100db0935798b9f7421cc86fb8218ba299",
-      "name": "Run npm exec",
-      "request": "launch",
-      "type": "node-terminal"
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach",
-      "port": 9229,
-      "skipFiles": ["<node_internals>/**"]
-    },
-    {
       "type": "node",
       "request": "launch",
-      "name": "Execute Command",
-      "skipFiles": ["<node_internals>/**"],
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["--loader", "ts-node/esm", "--no-warnings=ExperimentalWarning"],
-      "program": "${workspaceFolder}/bin/dev.js",
-      "args": ["hello", "world"]
+      "name": "Launch Program",
+      "program": "${workspaceFolder}/bin/run",
+      "args": [
+        "--name",
+        "Callum",
+        "--force",
+        "argument"
+      ]
     }
   ]
 }

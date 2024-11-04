@@ -6,7 +6,8 @@
     "rootDir": "src",
     "strict": true,
     "target": "es2022",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
   },
   "include": ["./src/**/*"],
   "ts-node": {

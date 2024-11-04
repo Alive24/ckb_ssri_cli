@@ -1,9 +1,9 @@
 import {ccc, Cell, CellDep, CellDepLike} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import {getCellDepsFromSearchKeys, getCLIConfig, getUDTConfig} from '../../../libs/config.js'
+import {getCellDepsFromSearchKeys, getCLIConfig } from '../../../libs/config.js'
 import 'dotenv/config'
 
-export default class UdtExtendedMint extends Command {
+export default class UDTExtendedMint extends Command {
   static override args = {
     symbol: Args.string({description: 'Symbol of UDT to mint.', required: true}),
     toAddress: Args.string({description: 'file to read', required: true}),
@@ -29,7 +29,7 @@ export default class UdtExtendedMint extends Command {
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UdtExtendedMint)
+    const {args, flags} = await this.parse(UDTExtendedMint)
 
     const CLIConfig = await getCLIConfig(this.config.configDir)
     // TODO: Mainnet support.
@@ -43,7 +43,7 @@ export default class UdtExtendedMint extends Command {
 
     const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
 
-    const udtConfig = getUDTConfig(args.symbol)
+    const udtConfig = CLIConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
 
     const mintTx = ccc.Transaction.from({
@@ -64,6 +64,6 @@ export default class UdtExtendedMint extends Command {
     // TODO: At the moment only simple lock script is supported. Should support more in the future, particularly proxy lock.
     const mintTxHash = await signer.sendTransaction(mintTx)
 
-    this.log(`Minted UDT with transaction hash: ${mintTxHash}`)
+    this.log(`Minted ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)
   }
 }

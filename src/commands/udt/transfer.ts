@@ -1,8 +1,8 @@
 import {ccc, Cell, CellDepLike} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import {getCellDepsFromSearchKeys, getUDTConfig} from '../../libs/config.js'
+import {getCellDepsFromSearchKeys, getCLIConfig} from '../../libs/config.js'
 
-export default class UdtTransfer extends Command {
+export default class UDTTransfer extends Command {
   static override args = {
     symbol: Args.string({description: 'Symbol of UDT to transfer.', required: true}),
     toAddress: Args.string({description: 'file to read', required: true}),
@@ -28,21 +28,24 @@ export default class UdtTransfer extends Command {
     }),
     // TODO: Implement fromTransactionJson and holdSend.
     fromTransactionJson: Flags.file({
-      description: 'Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
+      description:
+        'Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
     }),
     holdSend: Flags.boolean({
-      description: 'Hold the transaction and send it later. Will output the transaction JSON. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+      description:
+        'Hold the transaction and send it later. Will output the transaction JSON. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
     }),
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UdtTransfer)
+    const {args, flags} = await this.parse(UDTTransfer)
 
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
     const signer = new ccc.SignerCkbPrivateKey(client, process.env.MAIN_WALLET_PRIVATE_KEY!)
     const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
 
-    const udtConfig = getUDTConfig(args.symbol)
+    const cliConfig = await getCLIConfig(this.config.configDir)
+    const udtConfig = cliConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
 
     const transferTx = ccc.Transaction.from({
@@ -61,7 +64,7 @@ export default class UdtTransfer extends Command {
     transferTx.addCellDeps(await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))
     const transferTxTxHash = await signer.sendTransaction(transferTx)
 
-    this.log(`Transferred UDT with transaction hash: ${transferTxTxHash}`)
+    this.log(`Transferred ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxTxHash}`)
 
     // TODO: Process error.
   }
