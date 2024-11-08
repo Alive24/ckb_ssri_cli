@@ -15,7 +15,7 @@ export default class UDTPausableEnumeratePaused extends Command {
 
   static override description =
     'Enumerate the pause list of the token. Note: This command should be transaction level if using external pause list.'
-
+  // TODO: Automatic redirect to transactions with the latest cell dep.
   static override examples = ['ckb_ssri_sli udt:pausable:enumerate-paused PUDT']
 
   static override flags = {
@@ -34,7 +34,7 @@ export default class UDTPausableEnumeratePaused extends Command {
     const {args, flags} = await this.parse(UDTPausableEnumeratePaused)
     // Method path hex function
     const hasher = new HasherCkb()
-    const enumeratePausedPathHex = hasher.update(Buffer.from('UDT.enumerate_paused')).digest().slice(0, 18)
+    const enumeratePausedPathHex = hasher.update(Buffer.from('UDTPausable.enumerate_paused')).digest().slice(0, 18)
     debug(`enumerate-paused | hashed method path hex: ${enumeratePausedPathHex}`)
 
     const cliConfig = await getCLIConfig(this.config.configDir)

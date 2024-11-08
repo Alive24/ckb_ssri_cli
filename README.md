@@ -25,19 +25,27 @@ USAGE
 ## Commands
 <!-- commands -->
 
+### UDTPausable.is_paused
+
 ```shell
 ckb_ssri_cli udt:pausable:is-paused PUDT 0xd19228c64920eb8c3d79557d8ae59ee7a14b9d7de45ccf8bafacf82c91fc359e
 ```
 
+### UDTPausable.enumerate_paused
+
 ```shell
 ckb_ssri_cli udt:pausable:enumerate-paused PUDT
 ```
+
+### UDTExtended.mint
 
 ```shell
 // Note: This is a paused address, but minting will override.
 ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
 ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq 100
 ```
+
+### UDT.transfer
 
 ```shell
 // Note: This will succeed as transferring as owner.

@@ -14,6 +14,7 @@ export default class UDTPausableIsPaused extends Command {
 
   static strict = false
 
+  // TODO: Automatic redirect to transactions with the latest cell dep.
   static override description = 'Inspect an array of specific lock hashes to see if any one of they are paused. Note that this command is transaction specific if using external pause list.'
 
   static override examples = ['ckb_ssri_sli udt:pausable:is-paused PUDT 0xd19228c64920eb8c3d79557d8ae59ee7a14b9d7de45ccf8bafacf82c91fc359e']
@@ -42,7 +43,7 @@ export default class UDTPausableIsPaused extends Command {
 
     // Method path hex function
     const hasher = new HasherCkb()
-    const isPausedPathHex = hasher.update(Buffer.from('UDT.is_paused')).digest().slice(0, 18)
+    const isPausedPathHex = hasher.update(Buffer.from('UDTPausable.is_paused')).digest().slice(0, 18)
     debug(`is-paused | hashed method path hex:${isPausedPathHex}`)
 
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
