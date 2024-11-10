@@ -1,24 +1,19 @@
 import {ccc, HasherCkb} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import debug from 'debug'
 import {getCLIConfig} from '../../../libs/config.js'
 import axios from 'axios'
 
 export default class UDTMetadataName extends Command {
   static override args = {
-    txHash: Args.string({description: 'txHash of the UDT cell.', required: true}),
-    index: Args.integer({description: 'index of the UDT cell.', required: true}),
+    txHash: Args.string({description: 'txHash of the UDT cell (Note: Not the script cell).', required: true}),
+    index: Args.integer({description: 'index of the UDT cell (Note: Not the script cell).', required: true}),
   }
 
-  static override description = 'describe the command here'
+  static override description = 'Return the name of the UDT cell. Will automatically route to the script cell for direct calling.'
 
-  static override examples = ['<%= config.bin %> <%= command.id %>']
+  static override examples = ['ckb_ssri_cli udt:metadata:name 0x5a68061c57b753c941919e42d74254f878ae2786387e42c1b835980443cb5cc8 0']
 
   static override flags = {
-    // flag with no value (-f, --force)
-    force: Flags.boolean({char: 'f'}),
-    // flag with a value (-n, --name=VALUE)
-    name: Flags.string({char: 'n', description: 'name to print'}),
   }
 
   public async run(): Promise<void> {
@@ -26,17 +21,44 @@ export default class UDTMetadataName extends Command {
     // Method path hex function
     const hasher = new HasherCkb()
     const namePathHex = hasher.update(Buffer.from('UDTMetadata.name')).digest().slice(0, 18)
-    debug(`enumerate-paused | hashed method path hex: ${namePathHex}`)
+    this.debug(`Hashed method path hex: ${namePathHex}`)
 
-    const cliConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
 
-    // Define the JSON payload
+    let targetTransactionResponse = await client.getTransaction(args.txHash)
+    if (!targetTransactionResponse) {
+      throw Error('client.getTransaction(txHashLike) failed.')
+    }
+
+    const targetCellTypeScript = targetTransactionResponse.transaction.outputs[args.index].type
+    if (!targetCellTypeScript) {
+      throw Error('No Type Script found for target Cell.')
+    }
+
+    const targetCellTypeScriptCodeHash = targetCellTypeScript.codeHash
+    let matchingCellDep = null
+    for (const cellDep of targetTransactionResponse.transaction.cellDeps) {
+      this.debug(`cellDepOutpointTxHash: ${cellDep.outPoint.txHash}`)
+
+      const scriptCell = await client.getCell(cellDep.outPoint)
+      // TODO: Limit TypeID cell.
+      this.debug(`scriptCellTypeHash: ${scriptCell?.cellOutput.type?.hash()}`)
+
+      if (scriptCell?.cellOutput.type?.hash() === targetCellTypeScriptCodeHash) {
+        matchingCellDep = cellDep
+        break
+      }
+    }
+
+    if (!matchingCellDep) {
+      throw Error('No matching cellDep found.')
+    }
+    // TODO: Switch to run_script_level_cell
     const payload = {
       id: 2,
       jsonrpc: '2.0',
       method: 'run_script_level_code',
-      params: [args.txHash, Number(args.index), [namePathHex]],
+      params: [matchingCellDep.outPoint.txHash, Number(matchingCellDep.outPoint.index), [namePathHex]],
     }
 
     // Send POST request
@@ -45,7 +67,7 @@ export default class UDTMetadataName extends Command {
         headers: {'Content-Type': 'application/json'},
       })
       .then((response) => {
-        console.log('Response JSON:', response.data)
+        this.log('Response JSON:', response.data)
         // TODO: Prettify response.
         return
       })

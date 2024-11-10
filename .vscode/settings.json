@@ -2,5 +2,7 @@
   "cSpell.words": [
     "PUDT",
     "USDI"
-  ]
+  ],
+  "mochaExplorer.files": "test/**/*.test.ts",
+  "mochaExplorer.require": "ts-node/register"
 }

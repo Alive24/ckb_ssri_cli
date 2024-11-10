@@ -4,7 +4,6 @@ import {cccA} from '@ckb-ccc/core/advanced'
 import {encodeHex, encodeU832Array} from '../../../libs/utils.js'
 import axios from 'axios'
 import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
-import debug from 'debug'
 
 export default class UDTPausableIsPaused extends Command {
   static override args = {
@@ -36,15 +35,15 @@ export default class UDTPausableIsPaused extends Command {
     for (const lock_hash of argv.slice(1)) {
       lockHashU832Array.push(numToBytes(String(lock_hash), 32).reverse())
     }
-    debug(`is-paused | lockHashU832Array: ${lockHashU832Array}`)
+    this.debug(`is-paused | lockHashU832Array: ${lockHashU832Array}`)
     const lockHashU832ArrayEncoded = encodeU832Array(lockHashU832Array)
-    debug(`is-paused | lockHashArrayEncoded: ${lockHashU832ArrayEncoded}`)
+    this.debug(`is-paused | lockHashArrayEncoded: ${lockHashU832ArrayEncoded}`)
     const lockHashU832ArrayEncodedHex = encodeHex(lockHashU832ArrayEncoded)
 
     // Method path hex function
     const hasher = new HasherCkb()
     const isPausedPathHex = hasher.update(Buffer.from('UDTPausable.is_paused')).digest().slice(0, 18)
-    debug(`is-paused | hashed method path hex:${isPausedPathHex}`)
+    this.debug(`is-paused | hashed method path hex:${isPausedPathHex}`)
 
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
     const cliConfig = await getCLIConfig(this.config.configDir)
@@ -65,17 +64,16 @@ export default class UDTPausableIsPaused extends Command {
     }
 
     // Send POST request
-    axios
-      .post(process.env.SSRI_SERVER_URL!, payload, {
-        headers: {'Content-Type': 'application/json'},
-      })
-      .then((response) => {
-        this.log('Response JSON:', response.data)
-        return
-      })
-      .catch((error) => {
-        console.error('Request failed', error)
-      })
-    // TODO: Prettify response.
+    try {
+      const response = await axios.post(process.env.SSRI_SERVER_URL!, payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    
+      this.log('Response JSON:', response.data);
+      // TODO: Prettify response.
+      
+    } catch (error) {
+      console.error('Request failed', error);
+    }
   }
 }

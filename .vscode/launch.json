@@ -2,15 +2,33 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "args": [
+        "-u",
+        "tdd",
+        "--timeout",
+        "999999",
+        "--colors",
+        "${workspaceFolder}/test"
+      ],
+      "internalConsoleOptions": "openOnSessionStart",
+      "name": "Mocha Tests",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node"
+    },
+
+    {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Debug ckb_ssri_cli",
       "program": "${workspaceFolder}/bin/run",
       "args": [
-        "--name",
-        "Callum",
-        "--force",
-        "argument"
+        "udt:metadata:name",
+        "0x5a68061c57b753c941919e42d74254f878ae2786387e42c1b835980443cb5cc8",
+        "0",
       ]
     }
   ]

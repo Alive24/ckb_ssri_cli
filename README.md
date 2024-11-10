@@ -40,21 +40,32 @@ ckb_ssri_cli udt:pausable:enumerate-paused PUDT
 ### UDTExtended.mint
 
 ```shell
-// Note: This is a paused address, but minting will override.
-ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
 ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq 100
+// NOTE: This is a paused address, but minting will override.
+ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
+// NOTE: This won't mint as TestNormal is not owner.
+ckb_ssri_cli udt:extended:mint PUDT --fromAccount=TestNormal ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
 ```
 
 ### UDT.transfer
 
 ```shell
-// Note: This will succeed as transferring as owner.
+// Note: This will succeed as transferring as owner overrides despite transferring to paused address.
 ckb_ssri_cli udt:transfer PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
+
+// Note: This will succeed as transferring to non-paused address from normal address.
+ckb_ssri_cli udt:transfer --fromAccount=TestNormal PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq 100
 
 // Note: This will fail as transferring from paused address.
 ckb_ssri_cli udt:transfer --fromAccount=Paused PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq 100
 
 // Note: This will fail as transferring to paused address.
-ckb_ssri_cli udt:transfer --fromAccount=Paused PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq 100
+ckb_ssri_cli udt:transfer --fromAccount=TestNormal PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100
 
+```
+
+### UDTMetadata.name
+  
+```shell
+ckb_ssri_cli udt:metadata:name 0x5a68061c57b753c941919e42d74254f878ae2786387e42c1b835980443cb5cc8 0
 ```

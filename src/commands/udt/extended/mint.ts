@@ -57,15 +57,17 @@ export default class UDTExtendedMint extends Command {
       outputsData: [ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)],
     })
 
-
     await mintTx.completeInputsByCapacity(signer)
     await mintTx.completeFeeBy(signer)
 
     mintTx.addCellDeps(await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))
 
     // TODO: At the moment only simple lock script is supported. Should support more in the future, particularly proxy lock.
-    const mintTxHash = await signer.sendTransaction(mintTx)
-
-    this.log(`Minted ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)
+    try {
+      const mintTxHash = await signer.sendTransaction(mintTx)
+      this.log(`Minted ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)
+    } catch (error: any) {
+      this.error(error)
+    }
   }
 }

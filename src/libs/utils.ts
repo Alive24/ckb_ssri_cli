@@ -1,5 +1,3 @@
-import debug from "debug";
-
 export function encodeU832Array(val: Array<Uint8Array>): Uint8Array {
   if (val.some((arr) => arr.length !== 32)) {
     throw new Error('Each inner array must be exactly 32 bytes.')
@@ -7,7 +5,6 @@ export function encodeU832Array(val: Array<Uint8Array>): Uint8Array {
 
   // Convert the length to a 4-byte little-endian array
   const lengthBytes = new Uint8Array(new Uint32Array([val.length]).buffer)
-  debug(`encodeU832Array | lengthBytes: ${lengthBytes}`);
 
   // Flatten the 2D array of 32-byte elements into a single array
   const flattenedBytes = val.reduce((acc, curr) => {
@@ -26,7 +23,6 @@ export function decodeU832Array(data: Uint8Array): Array<Uint8Array> {
 
   // Extract the length as a little-endian 4-byte integer
   const length = new Uint32Array(data.slice(0, 4).buffer)[0]
-  debug(`decodeU832Array | length: ${length}`);
 
   // Extract the 32-byte elements from the remaining data
   const result = []

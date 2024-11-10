@@ -4,7 +4,6 @@ import {cccA} from '@ckb-ccc/core/advanced'
 import {encodeHex, encodeU832Array} from '../../../libs/utils.js'
 import axios from 'axios'
 import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
-import debug from 'debug'
 
 export default class UDTPausableEnumeratePaused extends Command {
   static override args = {
@@ -35,7 +34,7 @@ export default class UDTPausableEnumeratePaused extends Command {
     // Method path hex function
     const hasher = new HasherCkb()
     const enumeratePausedPathHex = hasher.update(Buffer.from('UDTPausable.enumerate_paused')).digest().slice(0, 18)
-    debug(`enumerate-paused | hashed method path hex: ${enumeratePausedPathHex}`)
+    this.debug(`enumerate-paused | hashed method path hex: ${enumeratePausedPathHex}`)
 
     const cliConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
@@ -52,35 +51,39 @@ export default class UDTPausableEnumeratePaused extends Command {
     }
 
     // Send POST request
-    axios
-      .post(process.env.SSRI_SERVER_URL!, payload, {
+    try {
+      const response = await axios.post(process.env.SSRI_SERVER_URL!, payload, {
         headers: {'Content-Type': 'application/json'},
       })
-      .then((response) => {
-        this.debug('Response JSON:', response.data)
-        const lengthBytes = new Uint8Array(4)
-        for (let i = 0; i < 8; i += 2) {
-          lengthBytes[i / 2] = parseInt(
-            response.data.result
-              .toString()
-              .slice(2)
-              .slice(i, i + 2),
-            16,
-          )
-        }
-        const pauseListLength = new cccA.moleculeCodecCkb.Uint32(lengthBytes)
-        this.log(`Pause List Length: ${pauseListLength.toLittleEndianUint32()}`)
-        const pauseListHex = response.data.result.toString().slice(10)
-        let pauseList = []
-        for (let i = 0; i < pauseListHex.length; i += 64) {
-          pauseList.push(pauseListHex.slice(i, i + 64))
-        }
-        this.log(`Pause List: \n${pauseList}`)
-        return
-      })
-      .catch((error) => {
-        console.error('Request failed', error)
-      })
+
+      this.debug('Response JSON:', response.data)
+
+      const lengthBytes = new Uint8Array(4)
+      for (let i = 0; i < 8; i += 2) {
+        lengthBytes[i / 2] = parseInt(
+          response.data.result
+            .toString()
+            .slice(2)
+            .slice(i, i + 2),
+          16,
+        )
+      }
+
+      const pauseListLength = new cccA.moleculeCodecCkb.Uint32(lengthBytes)
+      this.log(`Pause List Length: ${pauseListLength.toLittleEndianUint32()}`)
+
+      const pauseListHex = response.data.result.toString().slice(10)
+      const pauseList = []
+      for (let i = 0; i < pauseListHex.length; i += 64) {
+        pauseList.push(pauseListHex.slice(i, i + 64))
+      }
+
+      this.log(`Pause List: \n${pauseList}`)
+      return
+    } catch (error) {
+      console.error('Request failed', error)
+    }
     // TODO: Prettify response.
+    
   }
 }
