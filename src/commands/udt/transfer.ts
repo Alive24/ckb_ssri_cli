@@ -5,7 +5,7 @@ import {getCellDepsFromSearchKeys, getCLIConfig} from '../../libs/config.js'
 export default class UDTTransfer extends Command {
   static override args = {
     symbol: Args.string({description: 'Symbol of UDT to transfer.', required: true}),
-    toAddress: Args.string({description: 'file to read', required: true}),
+    toAddress: Args.string({required: true}),
     toAmount: Args.string({
       description:
         'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000. You can transfer amount like 0.1.',

@@ -4,7 +4,7 @@ import {expect} from 'chai'
 
 describe('udt:extended:mint', () => {
   it('runs udt:extended:mint', async () => {
-    let {stdout} = await runCommand([
+    let runCommandResponse = await runCommand([
       'udt:extended:mint',
       'PUDT',
       'ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp',
@@ -13,12 +13,13 @@ describe('udt:extended:mint', () => {
     let retryCounter = 0
     while (true) {
       await sleep(5000)
-      if (stdout != '') {
-        expect(stdout).to.contain('Minted')
-        stdout = ''
+      if (runCommandResponse.stdout != '') {
+        expect(runCommandResponse.stdout).to.contain('Minted')
+        runCommandResponse.stdout = ''
         break
       }
-      console.warn(`stdout: ${stdout}`)
+      console.warn(`runCommandResponse: ${runCommandResponse}`)
+      console.warn(`stdout: ${runCommandResponse.stdout}, stderr: ${runCommandResponse.stderr}`)
       if (retryCounter > 5) {
         throw Error(`Failed to get response.`)
       }
