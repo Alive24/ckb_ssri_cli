@@ -84,6 +84,5 @@ export default class UDTPausableEnumeratePaused extends Command {
       console.error('Request failed', error)
     }
     // TODO: Prettify response.
-    
   }
 }
