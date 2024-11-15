@@ -90,6 +90,9 @@ export async function getCLIConfig(configDir?: string): Promise<CLIConfig> {
 
 export async function updateCLIConfig(configDir: string, cliConfig: CLIConfig): Promise<CLIConfig> {
   const configPath = path.join(configDir, 'ckb_ssri_cli_config.json')
+
+  await fs.ensureDir(configDir);
+  
   await fs.writeJSON(configPath, cliConfig, {spaces: 2})
   return cliConfig
 }

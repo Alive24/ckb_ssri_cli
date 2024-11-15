@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {getCLIConfig} from '../../libs/config.js'
-import {ccc} from '@ckb-ccc/core'
+import {Address, ccc} from '@ckb-ccc/core'
 
 export default class UDTBalance extends Command {
   static override args = {
@@ -30,12 +30,12 @@ export default class UDTBalance extends Command {
         process.env.MAIN_WALLET_PRIVATE_KEY!,
     )
 
-    const {script: ownerLock} = await signer.getRecommendedAddressObj()
+    const {script: userLock} = await ccc.Address.fromString(args.address, signer.client)
     const udtConfig = cliConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
 
     let balanceTotal = BigInt(0)
-    for await (const cell of client.findCellsByLock(ownerLock, udtTypeScript, true)) {
+    for await (const cell of client.findCellsByLock(userLock, udtTypeScript, true)) {
       balanceTotal += ccc.udtBalanceFrom(cell.outputData)
     }
     this.log(`Total balance of ${args.symbol} for ${args.address}: ${(Number(balanceTotal.toString()) / 10 ** udtConfig.decimals).toFixed(udtConfig.decimals)}`)
