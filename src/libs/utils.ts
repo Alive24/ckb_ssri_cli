@@ -1,5 +1,6 @@
-import { Address, Script } from '@ckb-ccc/core'
+import {Address, Script} from '@ckb-ccc/core'
 import {cccA} from '@ckb-ccc/core/advanced'
+import {BytesVec} from '@ckb-lumos/base/lib/blockchain.js'
 
 export function encodeU832Array(val: Array<Uint8Array>): Uint8Array {
   if (val.some((arr) => arr.length !== 32)) {
@@ -58,27 +59,17 @@ export function decodeHex(data: string): Uint8Array {
 }
 
 export function encodeLockArray(val: Array<Script>): Uint8Array {
-  // Convert the length to a 4-byte little-endian array
-  const lengthBytes = new Uint8Array(new Uint32Array([val.length]).buffer)
-
-  // Flatten the 2D array of 32-byte elements into a single array
-  const flattenedBytes = val.reduce((acc, curr) => {
-    acc.push(...curr.toBytes())
-    return acc
-  }, [] as number[])
-
-  // Combine the length bytes with the flattened byte array
-  return new Uint8Array([...lengthBytes, ...flattenedBytes])
+  return BytesVec.pack([...val.map((lock) => lock.toBytes())])
 }
 export function encodeU128Array(val: Array<cccA.moleculeCodecCkb.Uint128>): Uint8Array {
   // Convert the length to a 4-byte little-endian array
-  const lengthBytes = new Uint8Array(new Uint32Array([val.length]).buffer);
+  const lengthBytes = new Uint8Array(new Uint32Array([val.length]).buffer)
 
   // Flatten the array of Uint128 elements into a single array
-  const flattenedBytes = val.flatMap(curr => {
-    return Array.from(new Uint8Array(curr.raw()));
-  });
+  const flattenedBytes = val.flatMap((curr) => {
+    return Array.from(new Uint8Array(curr.raw()))
+  })
 
   // Combine the length bytes with the flattened byte array
-  return new Uint8Array([...lengthBytes, ...flattenedBytes]);
+  return new Uint8Array([...lengthBytes, ...flattenedBytes])
 }

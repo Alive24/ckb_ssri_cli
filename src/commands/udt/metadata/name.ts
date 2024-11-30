@@ -68,12 +68,12 @@ export default class UDTMetadataName extends Command {
       })
       .then((response) => {
         this.log('Response JSON:', response.data)
-        // TODO: Prettify response.
+        // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
         return
       })
       .catch((error) => {
         console.error('Request failed', error)
       })
-    // TODO: Prettify response.
+      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
   }
 }

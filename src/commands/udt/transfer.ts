@@ -3,7 +3,9 @@ import {Args, Command, Flags} from '@oclif/core'
 import {getCellDepsFromSearchKeys, getCLIConfig} from '../../libs/config.js'
 import {cccA} from '@ckb-ccc/core/advanced'
 import axios from 'axios'
-import { encodeHex, encodeLockArray, encodeU128Array } from '../../libs/utils.js'
+import {decodeHex, encodeHex, encodeLockArray, encodeU128Array} from '../../libs/utils.js'
+import {blockchain} from '@ckb-lumos/base'
+import {Transaction} from '@ckb-lumos/base/lib/blockchain.js'
 
 export default class UDTTransfer extends Command {
   static override args = {
@@ -15,6 +17,9 @@ export default class UDTTransfer extends Command {
       required: true,
     }),
   }
+
+  // ISSUE: [address:amount quickhand for all to_lock:amount in unrestricted mode for input #30](https://github.com/Alive24/ckb_ssri_cli/issues/30)
+
 
   static override description = 'Transfer UDT to an address. Currently only supports one receiver per command run. '
 
@@ -30,50 +35,68 @@ export default class UDTTransfer extends Command {
       description: 'Use specific account to sign. Will use MAIN_WALLET_PRIVATE_KEY from .env by default.',
       char: 'f',
     }),
-    // TODO: Implement fromTransactionJson and holdSend.
-    fromTransactionJson: Flags.file({
+    // ISSUE: [Implement fromTransactionJSON and holdSendToJSON #19](https://github.com/Alive24/ckb_ssri_cli/issues/19).
+    fromTransactionJSON: Flags.file({
       description:
         '(NOT IMPLEMENTED YET!) Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
     }),
+    holdSendToJSON: Flags.file({
+      description:
+        '(NOT IMPLEMENTED YET!) Hold the transaction and export it to a JSON file. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+    }),
     holdSend: Flags.boolean({
       description:
-        '(NOT IMPLEMENTED YET!) Hold the transaction and send it later. Will output the transaction JSON. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+        '(NOT IMPLEMENTED YET!) Hold the transaction and send it later. When neither holdSend nor holdSendToJSON is set, the transaction will be sent immediately.',
     }),
   }
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UDTTransfer)
 
-    const cliConfig = await getCLIConfig(this.config.configDir)
+    const CLIConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
 
     const signer = new ccc.SignerCkbPrivateKey(
       client,
       flags.privateKey ??
-        cliConfig.accountRegistry[flags.fromAccount ?? '']?.privateKey ??
+        CLIConfig.accountRegistry[flags.fromAccount ?? '']?.privateKey ??
         process.env.MAIN_WALLET_PRIVATE_KEY!,
     )
 
     const {script: changeLock} = await signer.getRecommendedAddressObj()
-    const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
 
+    const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
     const hasher = new HasherCkb()
     const transferPathHex = hasher.update(Buffer.from('UDT.transfer')).digest().slice(0, 18)
 
-    const udtConfig = cliConfig.UDTRegistry[args.symbol]
+    const udtConfig = CLIConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
     const codeCellDep = (await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))[0]
 
     const amountBytes = ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)
     const amountUint128 = new cccA.moleculeCodecCkb.Uint128(amountBytes)
 
-    const toLockArrayEncoded = cccA.moleculeCodecCkb.SerializeBytesVec([toLock.toBytes()])
-    const toLockArrayEncodedHex = encodeHex(new Uint8Array(toLockArrayEncoded))
+    const toLockArrayEncoded = encodeLockArray([toLock])
+    this.debug('toLockArrayEncoded:', toLockArrayEncoded)
+    const toLockArrayEncodedHex = encodeHex(toLockArrayEncoded)
     this.debug('toLockArrayEncodedHex:', toLockArrayEncodedHex)
     const toAmountArrayEncoded = encodeU128Array([amountUint128])
     this.debug('toAmountArrayEncoded:', toAmountArrayEncoded)
     const toAmountArrayEncodedHex = encodeHex(toAmountArrayEncoded)
-    this.debug('toAmountArrayEncodedHex:', toAmountArrayEncodedHex)
+
+    // TODO: Placeholder for holdSend and holdSendToJSON
+    const heldTxEncoded = ccc.Transaction.from({
+      version: 0,
+      cellDeps: [codeCellDep],
+      headerDeps: [],
+      inputs: [],
+      outputs: [
+      ],
+      outputsData: [],
+      witnesses: [],
+    }).toBytes()
+
+    const heldTxEncodedHex = encodeHex(heldTxEncoded)
 
     const payload = {
       id: 2,
@@ -83,7 +106,7 @@ export default class UDTTransfer extends Command {
         codeCellDep.outPoint.txHash,
         Number(codeCellDep.outPoint.index),
         // args.index,
-        [transferPathHex, `0x`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
+        [transferPathHex, `0x${heldTxEncodedHex}`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
         // NOTE: field names are wrong when using udtTypeScript.toBytes()
         {
           code_hash: udtTypeScript.codeHash,
@@ -99,42 +122,43 @@ export default class UDTTransfer extends Command {
         headers: {'Content-Type': 'application/json'},
       })
 
-      this.log('Response JSON:', response.data)
-      // TODO: Prettify response.
+
+      const transferTx = blockchain.Transaction.unpack(response.data.result)
+      const cccTransferTx = ccc.Transaction.from(transferTx)
+      await cccTransferTx.completeInputsByUdt(signer, udtTypeScript)
+      const balanceDiff =
+        (await cccTransferTx.getInputsUdtBalance(signer.client, udtTypeScript)) -
+        cccTransferTx.getOutputsUdtBalance(udtTypeScript)
+      if (balanceDiff > ccc.Zero) {
+        cccTransferTx.addOutput(
+          {
+            lock: changeLock,
+            type: udtTypeScript,
+          },
+          ccc.numLeToBytes(balanceDiff, 16),
+        )
+      }
+      await cccTransferTx.completeInputsByCapacity(signer)
+      await cccTransferTx.completeFeeBy(signer)
+      const newCellDep = await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys)
+      if (
+        cccTransferTx.cellDeps.find((cellDep) => {
+          if (
+            cellDep.outPoint.txHash === newCellDep[0].outPoint.txHash &&
+            cellDep.outPoint.index === newCellDep[0].outPoint.index &&
+            cellDep.depType === newCellDep[0].depType
+          ) {
+            return true
+          }
+        }) === undefined
+      ) {
+        cccTransferTx.addCellDeps(newCellDep)
+      }
+      const transferTxHash = await signer.sendTransaction(cccTransferTx)
+      this.log(`Transferred ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxHash}`)
     } catch (error) {
+      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
       console.error('Request failed', error)
     }
-
-    // const transferTx = ccc.Transaction.from({
-    //   outputs: [
-    //     {
-    //       lock: toLock,
-    //       type: udtTypeScript,
-    //     },
-    //   ],
-    //   outputsData: [ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)],
-    // })
-    // await transferTx.completeInputsByUdt(signer, udtTypeScript)
-    // const balanceDiff =
-    //   (await transferTx.getInputsUdtBalance(signer.client, udtTypeScript)) -
-    //   transferTx.getOutputsUdtBalance(udtTypeScript)
-    // if (balanceDiff > ccc.Zero) {
-    //   transferTx.addOutput(
-    //     {
-    //       lock: changeLock,
-    //       type: udtTypeScript,
-    //     },
-    //     ccc.numLeToBytes(balanceDiff, 16),
-    //   )
-    // }
-    // await transferTx.completeInputsByCapacity(signer)
-    // await transferTx.completeFeeBy(signer)
-
-    // transferTx.addCellDeps(await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))
-    // const transferTxTxHash = await signer.sendTransaction(transferTx)
-
-    // this.log(`Transferred ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxTxHash}`)
-
-    // TODO: Process error.
   }
 }

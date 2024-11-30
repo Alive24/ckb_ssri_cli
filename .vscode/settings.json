@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "PUDT",
+    "TPUDT",
     "USDI"
   ],
   "mochaExplorer.files": "test/**/*.test.ts",

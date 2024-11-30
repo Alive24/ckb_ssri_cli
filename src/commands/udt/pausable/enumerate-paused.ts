@@ -14,7 +14,7 @@ export default class UDTPausableEnumeratePaused extends Command {
 
   static override description =
     'Enumerate the pause list of the token. Note: This command should be transaction level if using external pause list.'
-  // TODO: Automatic redirect to transactions with the latest cell dep.
+  // ISSUE: [Automatic redirect to transactions with the latest cell dep. #25](https://github.com/Alive24/ckb_ssri_cli/issues/25)
   static override examples = ['ckb_ssri_sli udt:pausable:enumerate-paused PUDT']
 
   static override flags = {
@@ -28,7 +28,8 @@ export default class UDTPausableEnumeratePaused extends Command {
     }),
   }
 
-  // TODO: This would only work for code only pause list at the moment. Will need to raise to transaction level for external metadata/pause data cell.
+  // TODO: This would only work for code only pause list at the moment. Will need to raise to transaction level for external metadata/pause data cell. 
+  // ISSUE: [Raise enumerate-paused to transaction level for external pause list. #26](https://github.com/Alive24/ckb_ssri_cli/issues/26)
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UDTPausableEnumeratePaused)
     // Method path hex function
@@ -83,6 +84,6 @@ export default class UDTPausableEnumeratePaused extends Command {
     } catch (error) {
       console.error('Request failed', error)
     }
-    // TODO: Prettify response.
+      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
   }
 }

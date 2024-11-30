@@ -41,8 +41,8 @@ export default class UDTMetadataDecimals extends Command {
       this.debug(`cellDepOutpointTxHash: ${cellDep.outPoint.txHash}`)
 
       const scriptCell = await client.getCell(cellDep.outPoint)
-      // TODO: Limit TypeID cell.
-      // TODO: Reroute to the latest script cell.
+      // NOTE: Limit TypeID cell.
+      // ISSUE: [Reroute to the latest script cell for call on transaction. #23](https://github.com/Alive24/ckb_ssri_cli/issues/23)
       this.debug(`scriptCellTypeHash: ${scriptCell?.cellOutput.type?.hash()}`)
 
       if (scriptCell?.cellOutput.type?.hash() === targetCellTypeScriptCodeHash) {
@@ -69,12 +69,13 @@ export default class UDTMetadataDecimals extends Command {
       })
       .then((response) => {
         this.log('Response JSON:', response.data)
-        // TODO: Prettify response.
+        // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
+
         return
       })
       .catch((error) => {
         console.error('Request failed', error)
       })
-    // TODO: Prettify response.
+      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
   }
 }
