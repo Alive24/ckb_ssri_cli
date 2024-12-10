@@ -1,9 +1,9 @@
 import { ccc, HasherCkb } from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import { getCLIConfig } from '../../../libs/config.js'
+import { getCLIConfig } from '../../libs/config.js'
 import axios from 'axios'
 
-export default class UDTMetadataDecimals extends Command {
+export default class UDTDecimals extends Command {
   static override args = {
     txHash: Args.string({description: 'txHash of the UDT cell (Note: Not the script cell).', required: true}),
     index: Args.integer({description: 'index of the UDT cell (Note: Not the script cell).', required: true}),
@@ -18,10 +18,10 @@ export default class UDTMetadataDecimals extends Command {
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UDTMetadataDecimals)
+    const {args, flags} = await this.parse(UDTDecimals)
     // Method path hex function
     const hasher = new HasherCkb()
-    const decimalPathHex = hasher.update(Buffer.from('UDTMetadata.decimals')).digest().slice(0, 18)
+    const decimalPathHex = hasher.update(Buffer.from('UDT.decimals')).digest().slice(0, 18)
     this.debug(`Hashed method path hex: ${decimalPathHex}`)
 
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
@@ -41,8 +41,8 @@ export default class UDTMetadataDecimals extends Command {
       this.debug(`cellDepOutpointTxHash: ${cellDep.outPoint.txHash}`)
 
       const scriptCell = await client.getCell(cellDep.outPoint)
-      // TODO: Limit TypeID cell.
-      // TODO: Reroute to the latest script cell.
+      // NOTE: Limit TypeID cell.
+      // ISSUE: [Reroute to the latest script cell for call on transaction. #23](https://github.com/Alive24/ckb_ssri_cli/issues/23)
       this.debug(`scriptCellTypeHash: ${scriptCell?.cellOutput.type?.hash()}`)
 
       if (scriptCell?.cellOutput.type?.hash() === targetCellTypeScriptCodeHash) {
@@ -69,12 +69,13 @@ export default class UDTMetadataDecimals extends Command {
       })
       .then((response) => {
         this.log('Response JSON:', response.data)
-        // TODO: Prettify response.
+        // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
+
         return
       })
       .catch((error) => {
         console.error('Request failed', error)
       })
-    // TODO: Prettify response.
+      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
   }
 }

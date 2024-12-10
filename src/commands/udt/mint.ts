@@ -7,13 +7,13 @@ import {decodeHex, encodeHex, encodeLockArray, encodeU128Array} from '../../libs
 import {blockchain} from '@ckb-lumos/base'
 import {Transaction} from '@ckb-lumos/base/lib/blockchain.js'
 
-export default class UDTTransfer extends Command {
+export default class UDTMint extends Command {
   static override args = {
-    symbol: Args.string({description: 'Symbol of UDT to transfer.', required: true}),
+    symbol: Args.string({description: 'Symbol of UDT to mint.', required: true}),
     toAddress: Args.string({required: true}),
     toAmount: Args.string({
       description:
-        'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000. You can transfer amount like 0.1.',
+        'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000. You can mint amount like 0.1.',
       required: true,
     }),
   }
@@ -21,10 +21,10 @@ export default class UDTTransfer extends Command {
   // ISSUE: [address:amount quickhand for all to_lock:amount in unrestricted mode for input #30](https://github.com/Alive24/ckb_ssri_cli/issues/30)
 
 
-  static override description = 'Transfer UDT to an address. Currently only supports one receiver per command run. '
+  static override description = 'Mint UDT to an address. Currently only supports one receiver per command run. '
 
   static override examples = [
-    'ckb_ssri_cli udt:transfer TPUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
+    'ckb_ssri_cli udt:mint TPUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
   ]
 
   static override flags = {
@@ -38,11 +38,11 @@ export default class UDTTransfer extends Command {
     // ISSUE: [Implement fromTransactionJSON and holdSendToJSON #19](https://github.com/Alive24/ckb_ssri_cli/issues/19).
     fromTransactionJSON: Flags.file({
       description:
-        '(NOT IMPLEMENTED YET!) Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
+        '(NOT IMPLEMENTED YET!) Assemble transaction on the basis of a previous action; use together with holdSend to make multiple mints within the same transaction.',
     }),
     holdSendToJSON: Flags.file({
       description:
-        '(NOT IMPLEMENTED YET!) Hold the transaction and export it to a JSON file. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+        '(NOT IMPLEMENTED YET!) Hold the transaction and export it to a JSON file. Use together with fromTransactionJson to make multiple mints within the same transaction.',
     }),
     holdSend: Flags.boolean({
       description:
@@ -51,7 +51,7 @@ export default class UDTTransfer extends Command {
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UDTTransfer)
+    const {args, flags} = await this.parse(UDTMint)
 
     const CLIConfig = await getCLIConfig(this.config.configDir)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
@@ -67,7 +67,7 @@ export default class UDTTransfer extends Command {
 
     const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
     const hasher = new HasherCkb()
-    const transferPathHex = hasher.update(Buffer.from('UDT.transfer')).digest().slice(0, 18)
+    const mintPathHex = hasher.update(Buffer.from('UDT.mint')).digest().slice(0, 18)
 
     const udtConfig = CLIConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
@@ -106,7 +106,7 @@ export default class UDTTransfer extends Command {
         codeCellDep.outPoint.txHash,
         Number(codeCellDep.outPoint.index),
         // args.index,
-        [transferPathHex, `0x${heldTxEncodedHex}`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
+        [mintPathHex, `0x${heldTxEncodedHex}`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
         // NOTE: field names are wrong when using udtTypeScript.toBytes()
         {
           code_hash: udtTypeScript.codeHash,
@@ -123,26 +123,13 @@ export default class UDTTransfer extends Command {
       })
 
 
-      const transferTx = blockchain.Transaction.unpack(response.data.result)
+      const mintTx = blockchain.Transaction.unpack(response.data.result)
       // TODO: Adding self as cell dep.
-      const cccTransferTx = ccc.Transaction.from(transferTx)
-      await cccTransferTx.completeInputsByUdt(signer, udtTypeScript)
-      const balanceDiff =
-        (await cccTransferTx.getInputsUdtBalance(signer.client, udtTypeScript)) -
-        cccTransferTx.getOutputsUdtBalance(udtTypeScript)
-      if (balanceDiff > ccc.Zero) {
-        cccTransferTx.addOutput(
-          {
-            lock: changeLock,
-            type: udtTypeScript,
-          },
-          ccc.numLeToBytes(balanceDiff, 16),
-        )
-      }
-      await cccTransferTx.completeInputsByCapacity(signer)
-      await cccTransferTx.completeFeeBy(signer)
-      const transferTxHash = await signer.sendTransaction(cccTransferTx)
-      this.log(`Transferred ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxHash}`)
+      const cccMintTx = ccc.Transaction.from(mintTx)
+      await cccMintTx.completeInputsByCapacity(signer)
+      await cccMintTx.completeFeeBy(signer)
+      const mintTxHash = await signer.sendTransaction(cccMintTx)
+      this.log(`Mint ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)
     } catch (error) {
       // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
       console.error('Request failed', error)

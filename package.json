@@ -9,6 +9,8 @@
   "bugs": "https://github.com/Alive24/ckb_ssri_cli/issues",
   "dependencies": {
     "@ckb-ccc/core": "0.1.0-alpha.5",
+    "@ckb-lumos/base": "^0.23.0",
+    "@ckb-lumos/codec": "^0.23.0",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
@@ -75,7 +77,8 @@
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest && oclif readme",
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "oclif readme && git add README.md"
+    "version": "oclif readme && git add README.md",
+    "dev": "node --loader ts-node/esm ./bin/dev.js"
   },
   "types": "dist/index.d.ts"
 }

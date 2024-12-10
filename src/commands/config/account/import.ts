@@ -14,8 +14,7 @@ export default class ConfigAccountImport extends Command {
   ]
 
   static override flags = {
-    // TODO: Private key is the only approach at the moment. Support more in the future.
-    // TODO: Make this approach more secure. Maybe chain it to ckb-cli like ckb-cinnabar.
+    // ISSUE: [Support more ways of authentications and chain to ckb-cli like ckb-cinnabar #18](https://github.com/Alive24/ckb_ssri_cli/issues/18)
     privateKey: Flags.string({char: 'p', description: 'Private Key', required: true}),
   }
 

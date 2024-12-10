@@ -19,16 +19,168 @@
       ],
       "type": "node"
     },
-
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug ckb_ssri_cli",
-      "program": "${workspaceFolder}/bin/run",
-      "args": [
-        "udt:metadata:name",
-        "0x5a68061c57b753c941919e42d74254f878ae2786387e42c1b835980443cb5cc8",
-        "0",
+      "name": "Test Unauthorized udt:mint",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:mint",
+        "PUDT",
+        "--fromAccount=TestNormal",
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgatm0277z2rkyraf33rmn7hgl424z0lrg79sqam",
+        "100"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Normal udt:mint",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:mint",
+        "PUDT",
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgatm0277z2rkyraf33rmn7hgl424z0lrg79sqam",
+        "100"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Paused udt:mint",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:mint",
+        "PUDT",
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp",
+        "100"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Paused udt:transfer",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:transfer",
+        "PUDT",
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp",
+        "100"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Normal udt:transfer",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:transfer",
+        "PUDT",
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgatm0277z2rkyraf33rmn7hgl424z0lrg79sqam",
+        "100"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:pausable:enumerate-paused",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:pausable:enumerate-paused",
+        "PUDT",
+        // "0xd19228c64920eb8c3d79557d8ae59ee7a14b9d7de45ccf8bafacf82c91fc359e",
+        // "--newNext"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:pausable:pause",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:pausable:pause",
+        "PUDT",
+        "0xa320a09489791af2e5e1fe84927eda84f71afcbd2c7a65cb419464fe46e75085",
+        // "--newNext"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:pausable:unpause",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:pausable:unpause",
+        "PUDT",
+        "0xa320a09489791af2e5e1fe84927eda84f71afcbd2c7a65cb419464fe46e75085",
+        // "--newNext"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:name",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:name",
+        "0x72b80b17ab839d50745ad6697520a86bac87b126971c9b7a1e36baba975a995d",
+        "0"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:decimals",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:decimals",
+        "0x72b80b17ab839d50745ad6697520a86bac87b126971c9b7a1e36baba975a995d",
+        "0"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test udt:symbol",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "udt:symbol",
+        "0x72b80b17ab839d50745ad6697520a86bac87b126971c9b7a1e36baba975a995d",
+        "0"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test dev:modify-data",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "dev:modify-data",
+        "PUDT",
       ]
     }
   ]
