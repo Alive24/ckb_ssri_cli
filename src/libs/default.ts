@@ -61,6 +61,7 @@ export const DefaultAccountRegistry: Record<string, AccountConfig> = {
     privateKey: process.env.PAUSED_WALLET_PRIVATE_KEY!,
   },
   "TestNormal": {
+    // NOTE: The address is ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2jk6pyw9vlnfakx7vp4t5lxg0lzvvsp3c5adflu
     privateKey: "d6291986b247f93be1843a091ddaf889c13283fdd07b073e05176566896a74cb",
   }
 }

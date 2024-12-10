@@ -1,29 +1,30 @@
-import {ccc, Cell, CellDep, CellDepLike, HasherCkb} from '@ckb-ccc/core'
+import {ccc, Cell, CellDepLike, HasherCkb} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
-import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
-import 'dotenv/config'
-import {encodeHex, encodeLockArray, encodeU128Array} from '../../../libs/utils.js'
+import {getCellDepsFromSearchKeys, getCLIConfig} from '../../libs/config.js'
 import {cccA} from '@ckb-ccc/core/advanced'
 import axios from 'axios'
-import { blockchain } from '@ckb-lumos/base'
+import {decodeHex, encodeHex, encodeLockArray, encodeU128Array} from '../../libs/utils.js'
+import {blockchain} from '@ckb-lumos/base'
+import {Transaction} from '@ckb-lumos/base/lib/blockchain.js'
 
-export default class UDTExtendedMint extends Command {
+export default class UDTMint extends Command {
   static override args = {
     symbol: Args.string({description: 'Symbol of UDT to mint.', required: true}),
-    toAddress: Args.string({description: 'file to read', required: true}),
+    toAddress: Args.string({required: true}),
     toAmount: Args.string({
-      description: 'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000',
+      description:
+        'Amount with decimals. e.g. 1 USDT would be 1 instead of 100000000. You can mint amount like 0.1.',
       required: true,
     }),
   }
 
   // ISSUE: [address:amount quickhand for all to_lock:amount in unrestricted mode for input #30](https://github.com/Alive24/ckb_ssri_cli/issues/30)
 
-  static override description =
-    'Mint UDT to an address. Make sure you have the mint permission to the token. It overrides pause list.'
+
+  static override description = 'Mint UDT to an address. Currently only supports one receiver per command run. '
 
   static override examples = [
-    'ckb_ssri_cli udt:extended:mint PUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
+    'ckb_ssri_cli udt:mint TPUDT ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp 100',
   ]
 
   static override flags = {
@@ -32,15 +33,16 @@ export default class UDTExtendedMint extends Command {
     }),
     fromAccount: Flags.string({
       description: 'Use specific account to sign. Will use MAIN_WALLET_PRIVATE_KEY from .env by default.',
+      char: 'f',
     }),
     // ISSUE: [Implement fromTransactionJSON and holdSendToJSON #19](https://github.com/Alive24/ckb_ssri_cli/issues/19).
     fromTransactionJSON: Flags.file({
       description:
-        '(NOT IMPLEMENTED YET!) Assemble transaction on the basis of a previous action; use together with holdSend to make multiple transfers within the same transaction.',
+        '(NOT IMPLEMENTED YET!) Assemble transaction on the basis of a previous action; use together with holdSend to make multiple mints within the same transaction.',
     }),
     holdSendToJSON: Flags.file({
       description:
-        '(NOT IMPLEMENTED YET!) Hold the transaction and export it to a JSON file. Use together with fromTransactionJson to make multiple transfers within the same transaction.',
+        '(NOT IMPLEMENTED YET!) Hold the transaction and export it to a JSON file. Use together with fromTransactionJson to make multiple mints within the same transaction.',
     }),
     holdSend: Flags.boolean({
       description:
@@ -49,21 +51,23 @@ export default class UDTExtendedMint extends Command {
   }
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(UDTExtendedMint)
+    const {args, flags} = await this.parse(UDTMint)
 
     const CLIConfig = await getCLIConfig(this.config.configDir)
-    // ISSUE: [Mainnet support. #22](https://github.com/Alive24/ckb_ssri_cli/issues/22)
     const client = new ccc.ClientPublicTestnet({url: process.env.CKB_RPC_URL})
+
     const signer = new ccc.SignerCkbPrivateKey(
       client,
-      flags.privateKey ?? flags.fromAccount !== undefined
-        ? CLIConfig.accountRegistry[flags.fromAccount ?? ''].privateKey
-        : process.env.MAIN_WALLET_PRIVATE_KEY!,
+      flags.privateKey ??
+        CLIConfig.accountRegistry[flags.fromAccount ?? '']?.privateKey ??
+        process.env.MAIN_WALLET_PRIVATE_KEY!,
     )
+
+    const {script: changeLock} = await signer.getRecommendedAddressObj()
 
     const toLock = (await ccc.Address.fromString(args.toAddress, signer.client)).script
     const hasher = new HasherCkb()
-    const mintPathHex = hasher.update(Buffer.from('UDTExtended.mint')).digest().slice(0, 18)
+    const mintPathHex = hasher.update(Buffer.from('UDT.mint')).digest().slice(0, 18)
 
     const udtConfig = CLIConfig.UDTRegistry[args.symbol]
     const udtTypeScript = new ccc.Script(udtConfig.code_hash, 'type', udtConfig.args)
@@ -80,24 +84,20 @@ export default class UDTExtendedMint extends Command {
     this.debug('toAmountArrayEncoded:', toAmountArrayEncoded)
     const toAmountArrayEncodedHex = encodeHex(toAmountArrayEncoded)
 
-    // TODO: Placeholder for holdSend and holdSendToJSON. Will make it mint double the amount.
-    const heldTx = ccc.Transaction.from({
+    // TODO: Placeholder for holdSend and holdSendToJSON
+    const heldTxEncoded = ccc.Transaction.from({
       version: 0,
       cellDeps: [codeCellDep],
       headerDeps: [],
       inputs: [],
       outputs: [
-        {
-          lock: toLock,
-          type: udtTypeScript,
-        },
       ],
-      outputsData: [ccc.numLeToBytes(Math.floor(Number(args.toAmount) * 10 ** udtConfig.decimals), 16)],
+      outputsData: [],
       witnesses: [],
-    })
+    }).toBytes()
 
-    const heldTxEncodedHex = encodeHex(heldTx.toBytes())
-    
+    const heldTxEncodedHex = encodeHex(heldTxEncoded)
+
     const payload = {
       id: 2,
       jsonrpc: '2.0',
@@ -116,32 +116,20 @@ export default class UDTExtendedMint extends Command {
       ],
     }
 
-    // ISSUE: [Support minting from proxy lock or other lock for mint. #24](https://github.com/Alive24/ckb_ssri_cli/issues/24)
     // Send POST request
     try {
       const response = await axios.post(process.env.SSRI_SERVER_URL!, payload, {
         headers: {'Content-Type': 'application/json'},
       })
+
+
       const mintTx = blockchain.Transaction.unpack(response.data.result)
+      // TODO: Adding self as cell dep.
       const cccMintTx = ccc.Transaction.from(mintTx)
       await cccMintTx.completeInputsByCapacity(signer)
       await cccMintTx.completeFeeBy(signer)
-      const newCellDep = await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys)
-      if (
-        cccMintTx.cellDeps.find((cellDep) => {
-          if (
-            cellDep.outPoint.txHash === newCellDep[0].outPoint.txHash &&
-            cellDep.outPoint.index === newCellDep[0].outPoint.index &&
-            cellDep.depType === newCellDep[0].depType
-          ) {
-            return true
-          }
-        }) === undefined
-      ) {
-        cccMintTx.addCellDeps(newCellDep)
-      }
-      const transferTxHash = await signer.sendTransaction(cccMintTx)
-      this.log(`Minted ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxHash}`)
+      const mintTxHash = await signer.sendTransaction(cccMintTx)
+      this.log(`Mint ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)
     } catch (error) {
       // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
       console.error('Request failed', error)

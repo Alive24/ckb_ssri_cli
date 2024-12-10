@@ -1,9 +1,12 @@
 import {ccc, Cell, CellDepLike, HasherCkb, numToBytes, numToHex} from '@ckb-ccc/core'
 import {Args, Command, Flags} from '@oclif/core'
 import {cccA} from '@ckb-ccc/core/advanced'
-import {encodeHex, encodeU832Array} from '../../../libs/utils.js'
+import {decodeHex, encodeHex, encodeU832Array} from '../../../libs/utils.js'
 import axios from 'axios'
 import {getCellDepsFromSearchKeys, getCLIConfig} from '../../../libs/config.js'
+import {array, dynvec, option, struct, table, vector} from '@ckb-lumos/codec/lib/molecule/layout.js'
+import {Byte32, Bytes, BytesVec, Script} from '@ckb-lumos/base/lib/blockchain.js'
+import {BIish, Uint8} from '@ckb-lumos/codec/lib/number/uint.js'
 
 export default class UDTPausableEnumeratePaused extends Command {
   static override args = {
@@ -28,7 +31,6 @@ export default class UDTPausableEnumeratePaused extends Command {
     }),
   }
 
-  // TODO: This would only work for code only pause list at the moment. Will need to raise to transaction level for external metadata/pause data cell. 
   // ISSUE: [Raise enumerate-paused to transaction level for external pause list. #26](https://github.com/Alive24/ckb_ssri_cli/issues/26)
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(UDTPausableEnumeratePaused)
@@ -43,47 +45,46 @@ export default class UDTPausableEnumeratePaused extends Command {
 
     const codeCellDep = (await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys))[0]
 
+    let offsetHex = encodeHex(ccc.numLeToBytes(0, 4))
+    let limitHex = encodeHex(ccc.numLeToBytes(0, 4))
+
     // Define the JSON payload
     const payload = {
       id: 2,
       jsonrpc: '2.0',
       method: 'run_script_level_code',
-      params: [codeCellDep.outPoint.txHash, Number(codeCellDep.outPoint.index), [enumeratePausedPathHex]],
+      params: [
+        codeCellDep.outPoint.txHash,
+        Number(codeCellDep.outPoint.index),
+        [enumeratePausedPathHex, `0x${offsetHex}`, `0x${limitHex}`],
+      ],
     }
 
-    // Send POST request
+    const u832Codec = array(Uint8, 32)
+    const u832VecCodec = vector(u832Codec)
+
+    const udtPausableDataCodec = table(
+      {
+        pause_list: u832VecCodec,
+        next_type_script: option(Script)
+      },
+      ['pause_list', 'next_type_script'],
+    )
+
     try {
       const response = await axios.post(process.env.SSRI_SERVER_URL!, payload, {
         headers: {'Content-Type': 'application/json'},
       })
-
-      this.debug('Response JSON:', response.data)
-
-      const lengthBytes = new Uint8Array(4)
-      for (let i = 0; i < 8; i += 2) {
-        lengthBytes[i / 2] = parseInt(
-          response.data.result
-            .toString()
-            .slice(2)
-            .slice(i, i + 2),
-          16,
-        )
+      const udtPausableDataInBytesVec = BytesVec.unpack(response.data.result)
+      for (const udtPausableDataInBytes of udtPausableDataInBytesVec) {
+        this.log('udtPausableDataInBytes:', udtPausableDataInBytes)
+        const udtPausableData = udtPausableDataCodec.unpack(udtPausableDataInBytes)
+        this.log('Parsed udtPausableData:', udtPausableData)
       }
-
-      const pauseListLength = new cccA.moleculeCodecCkb.Uint32(lengthBytes)
-      this.log(`Pause List Length: ${pauseListLength.toLittleEndianUint32()}`)
-
-      const pauseListHex = response.data.result.toString().slice(10)
-      const pauseList = []
-      for (let i = 0; i < pauseListHex.length; i += 64) {
-        pauseList.push(pauseListHex.slice(i, i + 64))
-      }
-
-      this.log(`Pause List: \n${pauseList}`)
       return
     } catch (error) {
       console.error('Request failed', error)
     }
-      // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
+    // ISSUE: [Prettify responses from SSRI calls #21](https://github.com/Alive24/ckb_ssri_cli/issues/21)
   }
 }

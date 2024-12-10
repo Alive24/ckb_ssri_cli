@@ -33,8 +33,8 @@ export default class UDTPausableIsPaused extends Command {
   public async run(): Promise<void> {
     const {args, argv, flags} = await this.parse(UDTPausableIsPaused)
     let lockHashU832Array = []
-    for (const lock_hash of argv.slice(1)) {
-      lockHashU832Array.push(numToBytes(String(lock_hash), 32).reverse())
+    for (const lockHash of argv.slice(1)) {
+      lockHashU832Array.push(numToBytes(String(lockHash), 32).reverse())
     }
     this.debug(`is-paused | lockHashU832Array: ${lockHashU832Array}`)
     const lockHashU832ArrayEncoded = encodeU832Array(lockHashU832Array)

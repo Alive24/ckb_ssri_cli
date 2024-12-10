@@ -124,6 +124,7 @@ export default class UDTTransfer extends Command {
 
 
       const transferTx = blockchain.Transaction.unpack(response.data.result)
+      // TODO: Adding self as cell dep.
       const cccTransferTx = ccc.Transaction.from(transferTx)
       await cccTransferTx.completeInputsByUdt(signer, udtTypeScript)
       const balanceDiff =
@@ -140,20 +141,6 @@ export default class UDTTransfer extends Command {
       }
       await cccTransferTx.completeInputsByCapacity(signer)
       await cccTransferTx.completeFeeBy(signer)
-      const newCellDep = await getCellDepsFromSearchKeys(client, udtConfig.cellDepSearchKeys)
-      if (
-        cccTransferTx.cellDeps.find((cellDep) => {
-          if (
-            cellDep.outPoint.txHash === newCellDep[0].outPoint.txHash &&
-            cellDep.outPoint.index === newCellDep[0].outPoint.index &&
-            cellDep.depType === newCellDep[0].depType
-          ) {
-            return true
-          }
-        }) === undefined
-      ) {
-        cccTransferTx.addCellDeps(newCellDep)
-      }
       const transferTxHash = await signer.sendTransaction(cccTransferTx)
       this.log(`Transferred ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${transferTxHash}`)
     } catch (error) {
