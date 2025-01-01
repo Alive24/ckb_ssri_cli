@@ -10,7 +10,7 @@ export const DefaultRPCRegistry: Record<string, string> = {
 
 const TestnetPausableUDTConfig: UDTConfig = {
   network: "Testnet",
-  code_hash: '0x5fe5d5930122a972819aba74a2efa534522bd326bb146136950095e57a55c9be',
+  code_hash: '0x3f6b51561ef57d49ce74d97b5f9013a5c0ef2a80c5f8454b61f748a5000b48c9',
   args: '0xb5202efa0f2d250af66f0f571e4b8be8b272572663707a052907f8760112fe35',
   symbol: 'PUDT',
   decimals: 8,
@@ -20,7 +20,7 @@ const TestnetPausableUDTConfig: UDTConfig = {
         // TypeID
         codeHash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
         hashType: 'type',
-        args: '0x2035d31c47fafd6c1ddb50396c5bcd5b76f24539763ef4fca785022855068ca8',
+        args: '0x8bab3553b123c83d9bf03c738dfbca828cb20d569ec2cb077a00eef367d98a98',
       },
       scriptType: 'type',
       scriptSearchMode: 'exact',

@@ -87,7 +87,7 @@ export default class UDTMint extends Command {
     // TODO: Placeholder for holdSend and holdSendToJSON
     const heldTxEncoded = ccc.Transaction.from({
       version: 0,
-      cellDeps: [codeCellDep],
+      cellDeps: [],
       headerDeps: [],
       inputs: [],
       outputs: [
@@ -97,7 +97,7 @@ export default class UDTMint extends Command {
     }).toBytes()
 
     const heldTxEncodedHex = encodeHex(heldTxEncoded)
-
+    
     const payload = {
       id: 2,
       jsonrpc: '2.0',
@@ -106,7 +106,7 @@ export default class UDTMint extends Command {
         codeCellDep.outPoint.txHash,
         Number(codeCellDep.outPoint.index),
         // args.index,
-        [mintPathHex, `0x${heldTxEncodedHex}`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
+        [mintPathHex, `0x`, `0x${toLockArrayEncodedHex}`, `0x${toAmountArrayEncodedHex}`],
         // NOTE: field names are wrong when using udtTypeScript.toBytes()
         {
           code_hash: udtTypeScript.codeHash,
@@ -127,6 +127,7 @@ export default class UDTMint extends Command {
       // TODO: Adding self as cell dep.
       const cccMintTx = ccc.Transaction.from(mintTx)
       await cccMintTx.completeInputsByCapacity(signer)
+      await cccMintTx.addCellDeps([codeCellDep])
       await cccMintTx.completeFeeBy(signer)
       const mintTxHash = await signer.sendTransaction(cccMintTx)
       this.log(`Mint ${args.toAmount} ${args.symbol} to ${args.toAddress}. Tx hash: ${mintTxHash}`)

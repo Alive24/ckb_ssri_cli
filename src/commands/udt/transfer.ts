@@ -139,6 +139,7 @@ export default class UDTTransfer extends Command {
           ccc.numLeToBytes(balanceDiff, 16),
         )
       }
+      await cccTransferTx.addCellDeps(codeCellDep)
       await cccTransferTx.completeInputsByCapacity(signer)
       await cccTransferTx.completeFeeBy(signer)
       const transferTxHash = await signer.sendTransaction(cccTransferTx)

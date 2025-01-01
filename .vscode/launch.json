@@ -44,8 +44,8 @@
         "dev",
         "udt:mint",
         "PUDT",
-        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgatm0277z2rkyraf33rmn7hgl424z0lrg79sqam",
-        "100"
+        "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqg7mkruq9gwjdxsgpw8yzmlvzecsqafcysjyrveq",
+        "100000"
       ]
     },
     {
@@ -73,7 +73,7 @@
         "udt:transfer",
         "PUDT",
         "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqgtlcnzzna2tqst7jw78egjpujn7hdxpackjmmdp",
-        "100"
+        "111"
       ]
     },
     {
